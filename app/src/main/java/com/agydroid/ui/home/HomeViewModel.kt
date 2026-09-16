@@ -16,7 +16,8 @@ import javax.inject.Inject
 class HomeViewModel @Inject constructor(
     private val projectRepository: ProjectRepository,
     private val authRepository: AuthRepository,
-    private val bridgeApi: BridgeApi
+    private val bridgeApi: BridgeApi,
+    private val internalEngineManager: com.agydroid.engine.InternalEngineManager
 ) : ViewModel() {
 
     val projects: StateFlow<List<ProjectEntity>> = projectRepository.getAllProjects()
@@ -45,13 +46,13 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val res = bridgeApi.getStatus()
-                if (res.isSuccessful) {
+                if (res.isSuccessful && res.body() != null) {
                     _bridgeStatus.value = res.body()
                 } else {
-                    _bridgeStatus.value = null
+                    _bridgeStatus.value = internalEngineManager.getEngineStatus()
                 }
             } catch (e: Exception) {
-                _bridgeStatus.value = null
+                _bridgeStatus.value = internalEngineManager.getEngineStatus()
             }
         }
     }
