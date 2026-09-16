@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">AgyDroid</string>
+    <string name="github_connect">Connect GitHub</string>
+    <string name="github_token_hint">GitHub Personal Access Token</string>
+    <string name="validate_token">Validate &amp; Connect</string>
+    <string name="new_project">New Project</string>
+    <string name="project_name">Project Name</string>
+    <string name="package_name">Package Name</string>
+    <string name="create_project">Create Project</string>
+    <string name="chat_hint">Describe your app idea…</string>
+    <string name="build_apk">Build APK</string>
+    <string name="download_apk">Download APK</string>
+    <string name="bridge_not_connected">Bridge not connected. Start server.py in Termux first.</string>
+</resources>

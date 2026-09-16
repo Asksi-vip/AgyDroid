@@ -1,0 +1,31 @@
+# Gradle
+.gradle/
+build/
+**/build/
+local.properties
+
+# Android Studio
+*.iml
+.idea/
+*.DS_Store
+captures/
+.externalNativeBuild/
+.cxx/
+*.orig
+
+# Secrets - NEVER commit these
+local.properties
+*.keystore
+*.jks
+keystore.properties
+secrets.properties
+google-services.json
+
+# Python
+termux-bridge/__pycache__/
+termux-bridge/*.pyc
+termux-bridge/.venv/
+termux-bridge/venv/
+
+# Logs
+*.log
