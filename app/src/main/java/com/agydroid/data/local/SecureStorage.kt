@@ -53,14 +53,20 @@ class SecureStorage @Inject constructor(
     fun getGitHubUsername(): String? = sharedPreferences.getString(KEY_GITHUB_USERNAME, null)
     fun getGitHubAvatar(): String? = sharedPreferences.getString(KEY_GITHUB_AVATAR, null)
 
-    fun hasValidGitHubToken(): Boolean {
-        val token = getGitHubToken()
-        return !token.isNullOrBlank()
+    fun saveAntigravityToken(token: String) {
+        sharedPreferences.edit().putString(KEY_AGY_TOKEN, token).apply()
+    }
+
+    fun getAntigravityToken(): String? = sharedPreferences.getString(KEY_AGY_TOKEN, null)
+
+    fun clearAntigravityToken() {
+        sharedPreferences.edit().remove(KEY_AGY_TOKEN).apply()
     }
 
     companion object {
         private const val KEY_GITHUB_TOKEN = "github_personal_access_token"
         private const val KEY_GITHUB_USERNAME = "github_username"
         private const val KEY_GITHUB_AVATAR = "github_avatar_url"
+        private const val KEY_AGY_TOKEN = "antigravity_oauth_token"
     }
 }

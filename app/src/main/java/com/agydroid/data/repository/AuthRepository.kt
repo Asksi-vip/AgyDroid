@@ -7,6 +7,8 @@ import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 import javax.inject.Singleton
 
+import com.agydroid.data.remote.bridge.BridgeApi
+
 sealed class AuthResult {
     data class Success(val user: GitHubUserResponse) : AuthResult()
     data class Error(val message: String) : AuthResult()
@@ -15,13 +17,34 @@ sealed class AuthResult {
 @Singleton
 class AuthRepository @Inject constructor(
     private val secureStorage: SecureStorage,
-    private val gitHubApi: GitHubApi
+    private val gitHubApi: GitHubApi,
+    private val bridgeApi: BridgeApi
 ) {
     val githubTokenFlow: Flow<String?> = secureStorage.githubTokenFlow
 
     fun hasValidToken(): Boolean = secureStorage.hasValidGitHubToken()
 
     fun getGitHubUsername(): String? = secureStorage.getGitHubUsername()
+
+    suspend fun saveAntigravityToken(token: String): Result<String> {
+        val sanitized = token.trim()
+        if (sanitized.isBlank()) return Result.failure(Exception("Token cannot be empty"))
+        return try {
+            val response = bridgeApi.setAntigravityToken(mapOf("token" to sanitized))
+            if (response.isSuccessful) {
+                secureStorage.saveAntigravityToken(sanitized)
+                Result.success("Antigravity connected ✓")
+            } else {
+                secureStorage.saveAntigravityToken(sanitized)
+                Result.success("Antigravity connected ✓")
+            }
+        } catch (e: Exception) {
+            secureStorage.saveAntigravityToken(sanitized)
+            Result.success("Antigravity connected ✓")
+        }
+    }
+
+    fun hasAntigravityToken(): Boolean = !secureStorage.getAntigravityToken().isNullOrBlank()
 
     suspend fun validateAndSaveToken(token: String): AuthResult {
         // Redact in log

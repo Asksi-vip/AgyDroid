@@ -15,4 +15,7 @@ interface BridgeApi {
 
     @GET("files/read")
     suspend fun readFile(@Query("path") path: String): Response<ReadFileResponse>
+
+    @POST("auth/antigravity")
+    suspend fun setAntigravityToken(@Body request: Map<String, String>): Response<BridgeStatusResponse>
 }

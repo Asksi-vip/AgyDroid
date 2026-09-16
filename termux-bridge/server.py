@@ -264,9 +264,37 @@ async def read_file(request: web.Request) -> web.Response:
         return web.json_response({"error": str(e)}, status=500)
 
 
+async def set_antigravity_token(request: web.Request) -> web.Response:
+    """Allow any user to register or update their own Antigravity token."""
+    try:
+        data = await request.json()
+        token_data = data.get("token", "").strip()
+        if not token_data:
+            return web.json_response({"error": "Token cannot be empty"}, status=400)
+
+        token_dir = os.path.join(HOME_DIR, ".gemini", "antigravity-cli")
+        os.makedirs(token_dir, exist_ok=True)
+        token_file = os.path.join(token_dir, "antigravity-oauth-token")
+
+        if not token_data.startswith("{"):
+            payload = json.dumps({"token": token_data, "auth_method": "oauth"})
+        else:
+            payload = token_data
+
+        with open(token_file, "w") as f:
+            f.write(payload)
+
+        log.info("Antigravity token updated for user session.")
+        return web.json_response({"status": "ok", "message": "Antigravity connected ✓"})
+    except Exception as e:
+        log.error(f"Set token error: {e}")
+        return web.json_response({"error": str(e)}, status=500)
+
+
 def create_app() -> web.Application:
     app = web.Application()
     app.router.add_get("/status", get_status)
+    app.router.add_post("/auth/antigravity", set_antigravity_token)
     app.router.add_post("/workspace/create", create_workspace)
     app.router.add_post("/chat", chat_stream)
     app.router.add_get("/files", list_files)

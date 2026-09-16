@@ -26,8 +26,20 @@ class AuthViewModel @Inject constructor(
 
     val isAuthenticated = authRepository.githubTokenFlow.map { !it.isNullOrBlank() }
 
+    private val _antigravityConnected = MutableStateFlow(authRepository.hasAntigravityToken())
+    val antigravityConnected: StateFlow<Boolean> = _antigravityConnected.asStateFlow()
+
     private val _uiState = MutableStateFlow<AuthUiState>(AuthUiState.Idle)
     val uiState: StateFlow<AuthUiState> = _uiState.asStateFlow()
+
+    fun submitAntigravityToken(token: String) {
+        viewModelScope.launch {
+            val res = authRepository.saveAntigravityToken(token)
+            if (res.isSuccess) {
+                _antigravityConnected.value = true
+            }
+        }
+    }
 
     fun submitToken(token: String) {
         if (token.isBlank()) {
