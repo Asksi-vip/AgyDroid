@@ -1,30 +1,37 @@
 package com.agydroid.ui.chat
 
+import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Send
-import androidx.compose.material.icons.filled.Build
-import androidx.compose.material.icons.filled.Folder
-import androidx.compose.material.icons.filled.Stop
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.agydroid.data.local.entities.MessageEntity
 import com.agydroid.data.local.entities.MessageRole
-import com.agydroid.data.local.entities.ProjectEntity
 import com.agydroid.ui.components.CodeBlock
 import com.agydroid.ui.components.StatusBadge
 
@@ -44,6 +51,13 @@ fun ChatScreen(
     var inputPrompt by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
 
+    val suggestions = listOf(
+        "أريد تطبيق يعرض أسعار العملات والذهب مباشر",
+        "تطبيق قرآن كريم مع أوقات الصلاة والقبلة",
+        "تطبيق إدارة المهام والملاحظات الذكي",
+        "تطبيق متجر إلكتروني مع سلة مشتريات ودفع"
+    )
+
     LaunchedEffect(messages.size) {
         if (messages.isNotEmpty()) {
             listState.animateScrollToItem(messages.size - 1)
@@ -54,10 +68,33 @@ fun ChatScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Column {
-                        Text(project?.name ?: "Chat", style = MaterialTheme.typography.titleMedium)
-                        if (project != null) {
-                            StatusBadge(status = project!!.status)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.primaryContainer),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                Icons.Default.AutoAwesome,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Column {
+                            Text(
+                                project?.name ?: "AI Assistant",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                "Gemini 3.8 / Antigravity Agent",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         }
                     }
                 },
@@ -68,7 +105,7 @@ fun ChatScreen(
                 },
                 actions = {
                     IconButton(onClick = onNavigateToFiles) {
-                        Icon(Icons.Default.Folder, contentDescription = "Files")
+                        Icon(Icons.Default.Folder, contentDescription = "Files", tint = MaterialTheme.colorScheme.primary)
                     }
                     Button(
                         onClick = {
@@ -79,6 +116,7 @@ fun ChatScreen(
                             }
                         },
                         enabled = !uiState.isBuilding && project != null,
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
                         modifier = Modifier.padding(end = 8.dp)
                     ) {
@@ -91,10 +129,13 @@ fun ChatScreen(
                         } else {
                             Icon(Icons.Default.Build, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text("Build APK", fontSize = 12.sp)
+                            Text("Build APK", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                         }
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                )
             )
         }
     ) { padding ->
@@ -102,11 +143,12 @@ fun ChatScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
+                .background(MaterialTheme.colorScheme.background)
         ) {
-            // Activity status banner if running
-            AnimatedVisibility(visible = uiState.isStreaming && uiState.currentActivity != null) {
+            // Agent Live Status Indicator
+            AnimatedVisibility(visible = uiState.isStreaming) {
                 Surface(
-                    color = MaterialTheme.colorScheme.secondaryContainer,
+                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
@@ -116,13 +158,14 @@ fun ChatScreen(
                         CircularProgressIndicator(
                             modifier = Modifier.size(14.dp),
                             strokeWidth = 2.dp,
-                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                            color = MaterialTheme.colorScheme.primary
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = uiState.currentActivity ?: "Antigravity CLI is working...",
+                            text = "جاري كتابة الكود وبناء ملفات المشروع...",
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Medium
                         )
                     }
                 }
@@ -135,48 +178,62 @@ fun ChatScreen(
                     .weight(1f)
                     .fillMaxWidth(),
                 contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                verticalArrangement = Arrangement.spacedBy(20.dp)
             ) {
                 if (messages.isEmpty()) {
                     item {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 48.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = "Start by describing what you want your Android app to do.\nAntigravity will create the files and build it.",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(horizontal = 32.dp)
-                            )
-                        }
+                        EmptyChatState(
+                            onSelectSuggestion = { suggestion ->
+                                inputPrompt = suggestion
+                            }
+                        )
                     }
                 }
 
                 items(messages, key = { it.id }) { message ->
-                    MessageBubble(message = message)
+                    ChatMessageRow(message = message)
                 }
             }
 
-            // Bottom Input bar
+            // Quick suggestion chips above input
+            if (messages.isEmpty() || !uiState.isStreaming) {
+                LazyRow(
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(suggestions) { suggestion ->
+                        SuggestionChip(
+                            onClick = { inputPrompt = suggestion },
+                            label = { Text(suggestion, fontSize = 12.sp) },
+                            icon = { Icon(Icons.Default.Lightbulb, contentDescription = null, modifier = Modifier.size(14.dp)) }
+                        )
+                    }
+                }
+            }
+
+            // Bottom Input Bar (ChatGPT Style)
             Surface(
-                tonalElevation = 3.dp,
+                tonalElevation = 4.dp,
+                color = MaterialTheme.colorScheme.surface,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(12.dp),
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     OutlinedTextField(
                         value = inputPrompt,
                         onValueChange = { inputPrompt = it },
-                        placeholder = { Text("Describe your app idea...") },
+                        placeholder = { Text("اطلب تطبيقك أو اسأل عن الكود...", fontSize = 14.sp) },
                         modifier = Modifier.weight(1f),
-                        maxLines = 4,
+                        maxLines = 5,
+                        shape = RoundedCornerShape(24.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)
+                        ),
                         enabled = !uiState.isStreaming
                     )
 
@@ -185,9 +242,10 @@ fun ChatScreen(
                     if (uiState.isStreaming) {
                         IconButton(
                             onClick = { viewModel.cancelGeneration() },
-                            colors = IconButtonDefaults.filledIconButtonColors(
-                                containerColor = MaterialTheme.colorScheme.error
-                            )
+                            modifier = Modifier
+                                .size(48.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.error)
                         ) {
                             Icon(Icons.Default.Stop, contentDescription = "Cancel", tint = Color.White)
                         }
@@ -201,11 +259,19 @@ fun ChatScreen(
                                 }
                             },
                             enabled = inputPrompt.isNotBlank() && project != null,
-                            colors = IconButtonDefaults.filledIconButtonColors(
-                                containerColor = MaterialTheme.colorScheme.primary
-                            )
+                            modifier = Modifier
+                                .size(48.dp)
+                                .clip(CircleShape)
+                                .background(
+                                    if (inputPrompt.isNotBlank()) MaterialTheme.colorScheme.primary
+                                    else MaterialTheme.colorScheme.surfaceVariant
+                                )
                         ) {
-                            Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Send", tint = Color.White)
+                            Icon(
+                                Icons.AutoMirrored.Filled.Send,
+                                contentDescription = "Send",
+                                tint = if (inputPrompt.isNotBlank()) Color.White else Color.Gray
+                            )
                         }
                     }
                 }
@@ -215,41 +281,144 @@ fun ChatScreen(
 }
 
 @Composable
-fun MessageBubble(message: MessageEntity) {
-    val isUser = message.role == MessageRole.USER
-
+fun EmptyChatState(onSelectSuggestion: (String) -> Unit) {
     Column(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalAlignment = if (isUser) Alignment.End else Alignment.Start
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 32.dp, horizontal = 16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Box(
             modifier = Modifier
-                .widthIn(max = 320.dp)
-                .clip(
-                    RoundedCornerShape(
-                        topStart = 16.dp,
-                        topEnd = 16.dp,
-                        bottomStart = if (isUser) 16.dp else 4.dp,
-                        bottomEnd = if (isUser) 4.dp else 16.dp
-                    )
-                )
-                .background(
-                    if (isUser) MaterialTheme.colorScheme.primary
-                    else MaterialTheme.colorScheme.surfaceVariant
-                )
-                .padding(12.dp)
+                .size(64.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.primaryContainer),
+            contentAlignment = Alignment.Center
         ) {
-            val content = message.content
-            if (content.contains("```")) {
-                FormattedMessageContent(
-                    raw = content,
-                    textColor = if (isUser) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+            Icon(
+                Icons.Default.SmartToy,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(36.dp)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(
+            text = "مساعدك البرمجي الذكي لبناء تطبيقات الأندرويد",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onBackground
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Text(
+            text = "اكتب فكرة تطبيقك وسيقوم المهندس الذكي بإنشاء الملفات وكتابة الأكواد المصدرية وتجهيز البناء السحابي للـ APK.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            lineHeight = 22.sp
+        )
+    }
+}
+
+@Composable
+fun ChatMessageRow(message: MessageEntity) {
+    val isUser = message.role == MessageRole.USER
+    val clipboardManager = LocalClipboardManager.current
+    val context = LocalContext.current
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = if (isUser) Arrangement.End else Arrangement.Start,
+        verticalAlignment = Alignment.Top
+    ) {
+        if (!isUser) {
+            Box(
+                modifier = Modifier
+                    .size(32.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primaryContainer),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    Icons.Default.AutoAwesome,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(18.dp)
                 )
-            } else {
-                Text(
-                    text = content.ifEmpty { if (message.isStreaming) "● ● ●" else "" },
-                    color = if (isUser) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                    style = MaterialTheme.typography.bodyMedium
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+        }
+
+        Column(horizontalAlignment = if (isUser) Alignment.End else Alignment.Start) {
+            Box(
+                modifier = Modifier
+                    .widthIn(max = 330.dp)
+                    .clip(
+                        RoundedCornerShape(
+                            topStart = 16.dp,
+                            topEnd = 16.dp,
+                            bottomStart = if (isUser) 16.dp else 4.dp,
+                            bottomEnd = if (isUser) 4.dp else 16.dp
+                        )
+                    )
+                    .background(
+                        if (isUser) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.surfaceVariant
+                    )
+                    .padding(14.dp)
+            ) {
+                val content = message.content
+                if (content.contains("```")) {
+                    FormattedRichContent(
+                        raw = content,
+                        textColor = if (isUser) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                } else {
+                    Text(
+                        text = content.ifEmpty { if (message.isStreaming) "● ● ●" else "" },
+                        color = if (isUser) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodyMedium,
+                        lineHeight = 22.sp
+                    )
+                }
+            }
+
+            // Copy action button
+            if (!message.isStreaming && message.content.isNotBlank()) {
+                IconButton(
+                    onClick = {
+                        clipboardManager.setText(AnnotatedString(message.content))
+                        Toast.makeText(context, "تم نسخ الرسالة", Toast.LENGTH_SHORT).show()
+                    },
+                    modifier = Modifier.size(28.dp).padding(top = 2.dp)
+                ) {
+                    Icon(
+                        Icons.Default.ContentCopy,
+                        contentDescription = "نسخ",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                        modifier = Modifier.size(14.dp)
+                    )
+                }
+            }
+        }
+
+        if (isUser) {
+            Spacer(modifier = Modifier.width(8.dp))
+            Box(
+                modifier = Modifier
+                    .size(32.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.secondary),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    Icons.Default.Person,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSecondary,
+                    modifier = Modifier.size(18.dp)
                 )
             }
         }
@@ -257,12 +426,11 @@ fun MessageBubble(message: MessageEntity) {
 }
 
 @Composable
-fun FormattedMessageContent(raw: String, textColor: Color) {
+fun FormattedRichContent(raw: String, textColor: Color) {
     val parts = raw.split("```")
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         parts.forEachIndexed { index, part ->
             if (index % 2 == 1) {
-                // Code block
                 val lines = part.trim().lines()
                 val lang = if (lines.isNotEmpty() && lines.first().matches("^[a-zA-Z]+$".toRegex())) lines.first() else "kotlin"
                 val code = if (lines.size > 1 && lines.first().matches("^[a-zA-Z]+$".toRegex())) {
@@ -270,9 +438,13 @@ fun FormattedMessageContent(raw: String, textColor: Color) {
                 } else part.trim()
                 CodeBlock(code = code, language = lang)
             } else {
-                // Normal text
                 if (part.isNotBlank()) {
-                    Text(text = part.trim(), color = textColor, style = MaterialTheme.typography.bodyMedium)
+                    Text(
+                        text = part.trim(),
+                        color = textColor,
+                        style = MaterialTheme.typography.bodyMedium,
+                        lineHeight = 22.sp
+                    )
                 }
             }
         }
