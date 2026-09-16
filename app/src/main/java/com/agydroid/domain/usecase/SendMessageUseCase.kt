@@ -36,7 +36,7 @@ class SendMessageUseCase @Inject constructor(
             .onEach { event ->
                 when (event) {
                     is BridgeEvent.Text -> {
-                        stringBuilder.append(event.content).append("\n")
+                        stringBuilder.append(event.content)
                         chatRepository.updateMessageContent(
                             assistantPlaceholder.id,
                             stringBuilder.toString().trim(),

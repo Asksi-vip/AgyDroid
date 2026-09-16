@@ -78,10 +78,19 @@ class BridgeStreamClient @Inject constructor(
                                     trySend(BridgeEvent.Start(msg))
                                 }
                                 "data" -> {
-                                    val type = json.get("type")?.asString
-                                    val content = json.get("content")?.asString
+                                    val stepUpdate = if (json.has("step_update") && json.get("step_update").isJsonObject) json.getAsJsonObject("step_update") else null
+                                    val textDelta = stepUpdate?.get("text_delta")?.asString
+                                    val resultObj = if (json.has("result") && json.get("result").isJsonObject) json.getAsJsonObject("result") else null
+                                    val finalResponse = resultObj?.get("response")?.asString
+
+                                    val content = textDelta
+                                        ?: (if (textDelta == null) finalResponse else null)
+                                        ?: json.get("content")?.asString
                                         ?: json.get("text")?.asString
-                                    trySend(BridgeEvent.StreamData(line, type, content))
+
+                                    if (!content.isNullOrEmpty()) {
+                                        trySend(BridgeEvent.Text(content))
+                                    }
                                 }
                                 "text" -> {
                                     val content = json.get("content")?.asString ?: line

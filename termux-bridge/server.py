@@ -108,7 +108,6 @@ async def chat_stream(request: web.Request) -> web.StreamResponse:
         # Build agy command
         cmd = [
             AGY_PATH,
-            "--print",
             "--output-format", "stream-json",
             "--mode", "accept-edits",
             "--dangerously-skip-permissions",
@@ -119,7 +118,7 @@ async def chat_stream(request: web.Request) -> web.StreamResponse:
         if conversation_id:
             cmd += ["--conversation", conversation_id]
 
-        cmd.append(prompt)
+        cmd.append(f"--print={prompt}")
 
         log.info(f"Running agy in workspace: {workspace}")
 
@@ -135,11 +134,16 @@ async def chat_stream(request: web.Request) -> web.StreamResponse:
         )
         await response.prepare(request)
 
+        # Set AGY_AUTO_UPDATE=0 so non-interactive execution never blocks on update prompts
+        sub_env = dict(os.environ)
+        sub_env["AGY_AUTO_UPDATE"] = "0"
+
         proc = await asyncio.create_subprocess_exec(
             *cmd,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
-            cwd=workspace
+            cwd=workspace,
+            env=sub_env
         )
 
         async def send_event(event_type: str, payload: dict):
