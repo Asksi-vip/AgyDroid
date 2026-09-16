@@ -38,6 +38,8 @@ class SecureStorage @Inject constructor(
         return sharedPreferences.getString(KEY_GITHUB_TOKEN, null)
     }
 
+    fun hasValidGitHubToken(): Boolean = !getGitHubToken().isNullOrBlank()
+
     fun clearGitHubToken() {
         sharedPreferences.edit().remove(KEY_GITHUB_TOKEN).apply()
         _githubTokenFlow.value = null
