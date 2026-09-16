@@ -12,6 +12,9 @@ jobs:
     name: Assemble Debug APK
     runs-on: ubuntu-latest
 
+    permissions:
+      contents: write
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -36,3 +39,12 @@ jobs:
           name: AgyDroid-debug-apk
           path: app/build/outputs/apk/debug/*.apk
           retention-days: 14
+
+      - name: Upload APK to GitHub Release
+        uses: softprops/action-gh-release@v2
+        if: github.ref == 'refs/heads/main'
+        with:
+          tag_name: v1.0.0
+          files: app/build/outputs/apk/debug/*.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
